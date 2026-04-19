@@ -1,5 +1,4 @@
---// CONFIG
-local TOGGLE_KEY = Enum.KeyCode.P
+
 
 --// SERVICES
 local Players = game:GetService("Players")
@@ -13,13 +12,11 @@ local HRP = nil
 
 local enabled = false
 
-local savedCFrame = nil
-local savedVel = nil
-local savedAngVel = nil
+local savedCFrame
+local savedVel
+local savedAngVel
 
-local desyncActive = false -- tracks if we actually set junk values this frame
-
---// RANDOM
+--// RANDOM (daha hafif)
 local function safeRandom(min, max)
     return math.random(min, max)
 end
@@ -28,14 +25,6 @@ end
 local function setupCharacter(char)
     Character = char
     HRP = char:WaitForChild("HumanoidRootPart")
-
-    -- Reset state on character load / server change
-    enabled = false
-    savedCFrame = nil
-    savedVel = nil
-    savedAngVel = nil
-    desyncActive = false
-    print("Desync: reset on character load")
 end
 
 if LocalPlayer.Character then
@@ -49,32 +38,20 @@ UIS.InputBegan:Connect(function(input, gp)
     if gp then return end
     if input.KeyCode == TOGGLE_KEY then
         enabled = not enabled
-        if not enabled then
-            desyncActive = false
-        end
         print("Desync:", enabled and "ON" or "OFF")
     end
 end)
 
---// HEARTBEAT — send junk to server
+--// HEARTBEAT (server'a çöp veri gönder)
 RunService.Heartbeat:Connect(function()
-    if not enabled or not HRP then
-        desyncActive = false
-        return
-    end
+    if not enabled or not HRP then return end
 
-    -- Only save if we have a valid CFrame (not zero/default)
-    local cf = HRP.CFrame
-    if cf.Position.Magnitude < 50000 then
-        savedCFrame = cf
-        savedVel = HRP.AssemblyLinearVelocity
-        savedAngVel = HRP.AssemblyAngularVelocity
-    end
+    -- eski değerleri kaydet
+    savedCFrame = HRP.CFrame
+    savedVel = HRP.AssemblyLinearVelocity
+    savedAngVel = HRP.AssemblyAngularVelocity
 
-    if savedCFrame == nil then return end -- don't desync until we have a safe baseline
-
-    desyncActive = true
-
+    -- aşırı uç değil, daha stabil değerler
     HRP.CFrame = CFrame.new(
         safeRandom(-10000, 10000),
         safeRandom(-10000, 10000),
@@ -94,10 +71,9 @@ RunService.Heartbeat:Connect(function()
     )
 end)
 
---// RENDERSTEP — restore client-side
+--// RENDERSTEP (clientte eski haline dön)
 RunService:BindToRenderStep("DesyncFix", Enum.RenderPriority.First.Value, function()
-    if not enabled or not HRP or not desyncActive then return end
-    if savedCFrame == nil then return end
+    if not enabled or not HRP then return end
 
     HRP.CFrame = savedCFrame
     HRP.AssemblyLinearVelocity = savedVel
