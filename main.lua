@@ -14,8 +14,13 @@ assert(type(compiler) == "function", "Cheatwoz loader requires loadstring() or l
 
 local sharedEnv = (type(getgenv) == "function" and getgenv()) or _G
 local bootstrapUrl = "https://raw.githubusercontent.com/aqwozsky/Private/main/main.lua"
+local currentJobId = game.JobId or ""
 
 local function queueBootstrapOnTeleport()
+    if sharedEnv.CheatwozQueuedFromJobId == currentJobId then
+        return
+    end
+
     sharedEnv.CheatwozBootstrapUrl = bootstrapUrl
     sharedEnv.CheatwozBootstrapCode = ('loadstring(game:HttpGet("%s"))()'):format(sharedEnv.CheatwozBootstrapUrl)
     sharedEnv.CheatwozTeleportQueued = false
@@ -32,6 +37,7 @@ local function queueBootstrapOnTeleport()
         if type(entry.fn) == "function" then
             local ok = pcall(entry.fn, sharedEnv.CheatwozBootstrapCode)
             if ok then
+                sharedEnv.CheatwozQueuedFromJobId = currentJobId
                 sharedEnv.CheatwozTeleportQueued = true
                 sharedEnv.CheatwozTeleportQueueMethod = entry.name
                 break
