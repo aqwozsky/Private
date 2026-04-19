@@ -1,4 +1,5 @@
-
+--// CONFIG
+local TOGGLE_KEY = Enum.KeyCode.P
 
 --// SERVICES
 local Players = game:GetService("Players")
