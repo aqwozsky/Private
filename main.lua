@@ -18,11 +18,25 @@ local bootstrapUrl = "https://raw.githubusercontent.com/aqwozsky/Private/main/ma
 local function queueBootstrapOnTeleport()
     sharedEnv.CheatwozBootstrapUrl = bootstrapUrl
     sharedEnv.CheatwozBootstrapCode = ('loadstring(game:HttpGet("%s"))()'):format(sharedEnv.CheatwozBootstrapUrl)
+    sharedEnv.CheatwozTeleportQueued = false
+    sharedEnv.CheatwozTeleportQueueMethod = nil
 
-    local queueOnTeleport = queue_on_teleport or (syn and syn.queue_on_teleport)
+    local queueFunctions = {
+        { name = "queue_on_teleport", fn = queue_on_teleport },
+        { name = "queueonteleport", fn = queueonteleport },
+        { name = "syn.queue_on_teleport", fn = syn and syn.queue_on_teleport },
+        { name = "fluxus.queue_on_teleport", fn = fluxus and fluxus.queue_on_teleport },
+    }
 
-    if type(queueOnTeleport) == "function" then
-        queueOnTeleport(sharedEnv.CheatwozBootstrapCode)
+    for _, entry in ipairs(queueFunctions) do
+        if type(entry.fn) == "function" then
+            local ok = pcall(entry.fn, sharedEnv.CheatwozBootstrapCode)
+            if ok then
+                sharedEnv.CheatwozTeleportQueued = true
+                sharedEnv.CheatwozTeleportQueueMethod = entry.name
+                break
+            end
+        end
     end
 end
 
