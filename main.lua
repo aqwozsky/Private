@@ -16,8 +16,14 @@ local sharedEnv = (type(getgenv) == "function" and getgenv()) or _G
 local bootstrapUrl = "https://raw.githubusercontent.com/aqwozsky/Private/main/main.lua"
 local currentJobId = game.JobId or ""
 
+-- Clear script guards so they re-run on new server
+sharedEnv.CheatwozGuiLoaded = nil
+sharedEnv.CheatwozVoidLoaded = nil
+sharedEnv.CheatwozDesyncLoaded = nil
+
 local function queueBootstrapOnTeleport()
     if sharedEnv.CheatwozQueuedFromJobId == currentJobId and currentJobId ~= "" then
+        warn("Cheatwoz: already queued for this server, skipping.")
         return
     end
 
@@ -36,6 +42,7 @@ local function queueBootstrapOnTeleport()
         { name = "fluxus.queue_on_teleport", fn = fluxus and type(fluxus.queue_on_teleport) == "function" and fluxus.queue_on_teleport },
     }
 
+    local queued = false
     for _, entry in ipairs(queueFunctions) do
         if entry.fn then
             local ok, err = pcall(entry.fn, bootstrapCode)
@@ -44,14 +51,17 @@ local function queueBootstrapOnTeleport()
                 sharedEnv.CheatwozTeleportQueued = true
                 sharedEnv.CheatwozTeleportQueueMethod = entry.name
                 print(("Cheatwoz: queued via %s (JobId: %s)"):format(entry.name, currentJobId))
-                return
+                queued = true
+                break
             else
                 warn(("Cheatwoz: %s failed -> %s"):format(entry.name, tostring(err)))
             end
         end
     end
 
-    warn("Cheatwoz: no queue_on_teleport function found — auto-load after teleport will not work.")
+    if not queued then
+        warn("Cheatwoz: no queue_on_teleport found — auto-load after server change will NOT work.")
+    end
 end
 
 local function fetchSource(url)
