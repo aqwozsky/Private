@@ -4,6 +4,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local sharedEnv = (type(getgenv) == "function" and getgenv()) or _G
+local bannerImage = "rbxassetid://85098589980478"
 
 local existingGui = PlayerGui:FindFirstChild("CheatwozLoader")
 if existingGui then
@@ -17,7 +19,7 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = PlayerGui
 
-_G.CheatwozUI = _G.CheatwozUI or {}
+sharedEnv.CheatwozUI = sharedEnv.CheatwozUI or {}
 
 local function corner(obj, radius)
 	local c = Instance.new("UICorner")
@@ -39,7 +41,7 @@ local function gradient(obj, c1, c2, rot)
 	local g = Instance.new("UIGradient")
 	g.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, c1),
-		ColorSequenceKeypoint.new(1, c2)
+		ColorSequenceKeypoint.new(1, c2),
 	})
 	g.Rotation = rot or 0
 	g.Parent = obj
@@ -59,13 +61,29 @@ end
 local MainHolder = Instance.new("Frame")
 MainHolder.AnchorPoint = Vector2.new(0.5, 0.5)
 MainHolder.Position = UDim2.fromScale(0.5, 0.2)
-MainHolder.Size = UDim2.new(0, 820, 0, 250)
+MainHolder.Size = UDim2.new(0, 820, 0, 320)
 MainHolder.BackgroundTransparency = 1
 MainHolder.Parent = ScreenGui
 
+local Banner = Instance.new("ImageLabel")
+Banner.AnchorPoint = Vector2.new(0.5, 0)
+Banner.Position = UDim2.fromScale(0.5, 0)
+Banner.Size = UDim2.new(0, 320, 0, 78)
+Banner.BackgroundTransparency = 1
+Banner.Image = bannerImage
+Banner.ScaleType = Enum.ScaleType.Fit
+Banner.ZIndex = 8
+Banner.Parent = MainHolder
+
+local BannerGlow = Instance.new("UIStroke")
+BannerGlow.Color = Color3.fromRGB(184, 88, 255)
+BannerGlow.Thickness = 2
+BannerGlow.Transparency = 0.35
+BannerGlow.Parent = Banner
+
 local LoadingCard = Instance.new("Frame")
 LoadingCard.AnchorPoint = Vector2.new(0.5, 0)
-LoadingCard.Position = UDim2.fromScale(0.5, 0)
+LoadingCard.Position = UDim2.fromOffset(410, 84)
 LoadingCard.Size = UDim2.new(0, 760, 0, 140)
 LoadingCard.BackgroundColor3 = Color3.fromRGB(9, 3, 18)
 LoadingCard.BackgroundTransparency = 0.18
@@ -133,7 +151,7 @@ LoadingPercent.Parent = LoadingCard
 
 local InfoCard = Instance.new("Frame")
 InfoCard.AnchorPoint = Vector2.new(0.5, 0)
-InfoCard.Position = UDim2.fromScale(0.5, 0.18)
+InfoCard.Position = UDim2.fromOffset(410, 134)
 InfoCard.Size = UDim2.new(0, 760, 0, 108)
 InfoCard.BackgroundColor3 = Color3.fromRGB(9, 3, 18)
 InfoCard.BackgroundTransparency = 0.18
@@ -161,33 +179,33 @@ Divider.ZIndex = 6
 Divider.Parent = InfoCard
 corner(Divider, 999)
 
-local function makeKeyCap(parent, xScale, isRight)
+local function makeKeyCap(parent, xScale, isRight, label)
 	local key = Instance.new("Frame")
 	key.AnchorPoint = Vector2.new(isRight and 1 or 0, 0.5)
 	key.Position = UDim2.new(xScale, 0, 0.52, 0)
-	key.Size = UDim2.new(0, 42, 0, 34)
-	key.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
-	key.BackgroundTransparency = 0.05
+	key.Size = UDim2.new(0, isRight and 78 or 52, 0, 34)
+	key.BackgroundColor3 = Color3.fromRGB(32, 18, 52)
+	key.BackgroundTransparency = 0.02
 	key.BorderSizePixel = 0
 	key.ZIndex = 7
 	key.Parent = parent
 	corner(key, 8)
 
 	local keyStroke = Instance.new("UIStroke")
-	keyStroke.Color = Color3.fromRGB(160, 160, 160)
+	keyStroke.Color = Color3.fromRGB(182, 90, 255)
 	keyStroke.Thickness = 1
-	keyStroke.Transparency = 0.35
+	keyStroke.Transparency = 0.15
 	keyStroke.Parent = key
 
-	local icon = Instance.new("TextLabel")
-	icon.Size = UDim2.fromScale(1, 1)
-	icon.BackgroundTransparency = 1
-	icon.Text = "⌨"
-	icon.Font = Enum.Font.GothamBold
-	icon.TextScaled = true
-	icon.TextColor3 = Color3.fromRGB(35, 35, 35)
-	icon.ZIndex = 8
-	icon.Parent = key
+	local keyLabel = Instance.new("TextLabel")
+	keyLabel.Size = UDim2.fromScale(1, 1)
+	keyLabel.BackgroundTransparency = 1
+	keyLabel.Text = label
+	keyLabel.Font = Enum.Font.GothamBold
+	keyLabel.TextSize = isRight and 15 or 18
+	keyLabel.TextColor3 = Color3.fromRGB(244, 236, 255)
+	keyLabel.ZIndex = 8
+	keyLabel.Parent = key
 
 	return key
 end
@@ -204,10 +222,10 @@ LeftTitle.TextColor3 = Color3.fromRGB(155, 155, 155)
 LeftTitle.ZIndex = 7
 LeftTitle.Parent = InfoCard
 
-makeKeyCap(InfoCard, 0.05, false)
+makeKeyCap(InfoCard, 0.05, false, "P")
 
 local LeftKey = Instance.new("TextLabel")
-LeftKey.Position = UDim2.new(0, 92, 0, 50)
+LeftKey.Position = UDim2.new(0, 104, 0, 50)
 LeftKey.Size = UDim2.new(0, 80, 0, 30)
 LeftKey.BackgroundTransparency = 1
 LeftKey.Text = "P"
@@ -243,11 +261,11 @@ RightTitle.TextColor3 = Color3.fromRGB(155, 155, 155)
 RightTitle.ZIndex = 7
 RightTitle.Parent = InfoCard
 
-makeKeyCap(InfoCard, 0.95, true)
+makeKeyCap(InfoCard, 0.95, true, "RCTRL")
 
 local RightKey = Instance.new("TextLabel")
 RightKey.AnchorPoint = Vector2.new(1, 0)
-RightKey.Position = UDim2.new(1, -90, 0, 50)
+RightKey.Position = UDim2.new(1, -126, 0, 50)
 RightKey.Size = UDim2.new(0, 220, 0, 30)
 RightKey.BackgroundTransparency = 1
 RightKey.Text = "RightControl"
@@ -261,17 +279,18 @@ RightKey.Parent = InfoCard
 local function setVoidSpamEnabled(isEnabled)
 	LeftStatus.Text = "Status: " .. (isEnabled and "ON" or "OFF")
 	LeftStatus.TextColor3 = isEnabled and Color3.fromRGB(205, 95, 255) or Color3.fromRGB(140, 120, 160)
+	LeftKey.TextColor3 = isEnabled and Color3.fromRGB(233, 132, 255) or Color3.fromRGB(190, 72, 255)
 end
 
 setVoidSpamEnabled(false)
-_G.CheatwozUI.SetVoidSpamEnabled = setVoidSpamEnabled
+sharedEnv.CheatwozUI.SetVoidSpamEnabled = setVoidSpamEnabled
 
 task.spawn(function()
 	local duration = 2.8
 	local startTime = tick()
 
 	tween(LoadingBarFill, duration, {
-		Size = UDim2.new(1, 0, 1, 0)
+		Size = UDim2.new(1, 0, 1, 0),
 	})
 
 	while true do
@@ -290,7 +309,7 @@ task.spawn(function()
 
 	tween(LoadingCard, 0.35, {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromScale(0.5, -0.05)
+		Position = UDim2.fromScale(0.5, -0.05),
 	})
 
 	tween(LoadingTitle, 0.35, {TextTransparency = 1})
@@ -303,11 +322,11 @@ task.spawn(function()
 	LoadingCard.Visible = false
 	InfoCard.Visible = true
 	InfoCard.BackgroundTransparency = 1
-	InfoCard.Position = UDim2.fromScale(0.5, 0.02)
+	InfoCard.Position = UDim2.fromOffset(410, 96)
 
 	tween(InfoCard, 0.35, {
 		BackgroundTransparency = 0.18,
-		Position = UDim2.fromScale(0.5, 0.12)
+		Position = UDim2.fromOffset(410, 134),
 	})
 end)
 
@@ -317,10 +336,6 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	end
 
 	if input.KeyCode == Enum.KeyCode.RightControl then
-		if InfoCard.Visible then
-			InfoCard.Visible = false
-		else
-			InfoCard.Visible = true
-		end
+		InfoCard.Visible = not InfoCard.Visible
 	end
 end)

@@ -12,6 +12,20 @@ local files = {
 local compiler = loadstring or load
 assert(type(compiler) == "function", "Cheatwoz loader requires loadstring() or load().")
 
+local sharedEnv = (type(getgenv) == "function" and getgenv()) or _G
+local bootstrapUrl = "https://raw.githubusercontent.com/aqwozsky/Private/main/main.lua"
+
+local function queueBootstrapOnTeleport()
+    sharedEnv.CheatwozBootstrapUrl = bootstrapUrl
+    sharedEnv.CheatwozBootstrapCode = ('loadstring(game:HttpGet("%s"))()'):format(sharedEnv.CheatwozBootstrapUrl)
+
+    local queueOnTeleport = queue_on_teleport or (syn and syn.queue_on_teleport)
+
+    if type(queueOnTeleport) == "function" then
+        queueOnTeleport(sharedEnv.CheatwozBootstrapCode)
+    end
+end
+
 local function fetchSource(url)
     local errors = {}
 
@@ -43,6 +57,8 @@ local function fetchSource(url)
 
     error(("Failed to fetch remote source from %s (%s)"):format(url, table.concat(errors, ", ")))
 end
+
+queueBootstrapOnTeleport()
 
 for _, file in ipairs(files) do
     local source = fetchSource(file.url)
