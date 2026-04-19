@@ -18,6 +18,7 @@ local currentJobId = game.JobId or ""
 
 local function queueBootstrapOnTeleport()
     if sharedEnv.CheatwozQueuedFromJobId == currentJobId and currentJobId ~= "" then
+        warn("Cheatwoz: already queued for this server, skipping.")
         return
     end
 
@@ -36,6 +37,7 @@ local function queueBootstrapOnTeleport()
         { name = "fluxus.queue_on_teleport", fn = fluxus and type(fluxus.queue_on_teleport) == "function" and fluxus.queue_on_teleport },
     }
 
+    local queued = false
     for _, entry in ipairs(queueFunctions) do
         if entry.fn then
             local ok, err = pcall(entry.fn, bootstrapCode)
@@ -44,14 +46,18 @@ local function queueBootstrapOnTeleport()
                 sharedEnv.CheatwozTeleportQueued = true
                 sharedEnv.CheatwozTeleportQueueMethod = entry.name
                 print(("Cheatwoz: queued via %s (JobId: %s)"):format(entry.name, currentJobId))
-                return
+                queued = true
+                break
             else
                 warn(("Cheatwoz: %s failed -> %s"):format(entry.name, tostring(err)))
             end
         end
     end
 
-    warn("Cheatwoz: no queue_on_teleport function found — auto-load after teleport will not work.")
+    if not queued then
+        warn("Cheatwoz: NO queue_on_teleport function found! Auto-load will NOT work after server change.")
+        warn("Cheatwoz: Make sure your executor supports queue_on_teleport.")
+    end
 end
 
 local function fetchSource(url)
@@ -82,12 +88,18 @@ local function fetchSource(url)
     error(("Failed to fetch remote source from %s (%s)"):format(url, table.concat(errors, ", ")))
 end
 
+-- Queue FIRST before loading scripts, so even if a script errors the queue is set
 queueBootstrapOnTeleport()
 
 for _, file in ipairs(files) do
-    local source = fetchSource(file.url)
-    assert(type(source) == "string" and source ~= "", ("No source returned for %s"):format(file.name))
-    local chunk, err = compiler(source, "@" .. file.name)
-    assert(chunk, ("Failed to compile %s: %s"):format(file.name, tostring(err)))
-    chunk()
+    local ok, err = pcall(function()
+        local source = fetchSource(file.url)
+        assert(type(source) == "string" and source ~= "", ("No source returned for %s"):format(file.name))
+        local chunk, compileErr = compiler(source, "@" .. file.name)
+        assert(chunk, ("Failed to compile %s: %s"):format(file.name, tostring(compileErr)))
+        chunk()
+    end)
+    if not ok then
+        warn(("Cheatwoz: failed to load %s -> %s"):format(file.name, tostring(err)))
+    end
 end
