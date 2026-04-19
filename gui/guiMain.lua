@@ -6,7 +6,7 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local sharedEnv = (type(getgenv) == "function" and getgenv()) or _G
-local bannerAssetId = "85098589980478"
+local bannerAssetId = "110544367095949"
 
 local existingGui = PlayerGui:FindFirstChild("CheatwozLoader")
 if existingGui then
@@ -72,9 +72,24 @@ Banner.Position = UDim2.fromScale(0.5, 0)
 Banner.Size = UDim2.new(0, 320, 0, 78)
 Banner.BackgroundTransparency = 1
 Banner.Image = ""
+Banner.ImageTransparency = 0
+Banner.ImageColor3 = Color3.fromRGB(255, 255, 255)
 Banner.ScaleType = Enum.ScaleType.Fit
 Banner.ZIndex = 8
 Banner.Parent = MainHolder
+
+local BannerFallback = Instance.new("TextLabel")
+BannerFallback.AnchorPoint = Vector2.new(0.5, 0)
+BannerFallback.Position = UDim2.fromScale(0.5, 0.12)
+BannerFallback.Size = UDim2.new(0, 360, 0, 42)
+BannerFallback.BackgroundTransparency = 1
+BannerFallback.Text = "CHEATWOZ"
+BannerFallback.Font = Enum.Font.GothamBlack
+BannerFallback.TextScaled = true
+BannerFallback.TextColor3 = Color3.fromRGB(218, 116, 255)
+BannerFallback.TextTransparency = 1
+BannerFallback.ZIndex = 7
+BannerFallback.Parent = MainHolder
 
 local BannerGlow = Instance.new("UIStroke")
 BannerGlow.Color = Color3.fromRGB(184, 88, 255)
@@ -88,6 +103,10 @@ local function applyBannerImage(imageLabel, assetId)
 		("http://www.roblox.com/asset/?id=%s"):format(assetId),
 		("rbxthumb://type=Asset&id=%s&w=420&h=120"):format(assetId),
 		("rbxthumb://type=Asset&id=%s&w=840&h=240"):format(assetId),
+		("rbxthumb://type=Image&id=%s&w=420&h=120"):format(assetId),
+		("rbxthumb://type=Image&id=%s&w=840&h=240"):format(assetId),
+		("rbxthumb://type=Decal&id=%s&w=420&h=120"):format(assetId),
+		("rbxthumb://type=Decal&id=%s&w=840&h=240"):format(assetId),
 	}
 
 	for _, source in ipairs(imageSources) do
@@ -108,6 +127,12 @@ local function applyBannerImage(imageLabel, assetId)
 end
 
 applyBannerImage(Banner, bannerAssetId)
+
+if sharedEnv.CheatwozBannerImage then
+	BannerFallback.Visible = false
+else
+	BannerFallback.TextTransparency = 0
+end
 
 local LoadingCard = Instance.new("Frame")
 LoadingCard.AnchorPoint = Vector2.new(0.5, 0)
