@@ -1,11 +1,12 @@
 local Players = game:GetService("Players")
+local ContentProvider = game:GetService("ContentProvider")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local sharedEnv = (type(getgenv) == "function" and getgenv()) or _G
-local bannerImage = "rbxassetid://85098589980478"
+local bannerAssetId = "85098589980478"
 
 local existingGui = PlayerGui:FindFirstChild("CheatwozLoader")
 if existingGui then
@@ -70,7 +71,7 @@ Banner.AnchorPoint = Vector2.new(0.5, 0)
 Banner.Position = UDim2.fromScale(0.5, 0)
 Banner.Size = UDim2.new(0, 320, 0, 78)
 Banner.BackgroundTransparency = 1
-Banner.Image = bannerImage
+Banner.Image = ""
 Banner.ScaleType = Enum.ScaleType.Fit
 Banner.ZIndex = 8
 Banner.Parent = MainHolder
@@ -80,6 +81,33 @@ BannerGlow.Color = Color3.fromRGB(184, 88, 255)
 BannerGlow.Thickness = 2
 BannerGlow.Transparency = 0.35
 BannerGlow.Parent = Banner
+
+local function applyBannerImage(imageLabel, assetId)
+	local imageSources = {
+		("rbxassetid://%s"):format(assetId),
+		("http://www.roblox.com/asset/?id=%s"):format(assetId),
+		("rbxthumb://type=Asset&id=%s&w=420&h=120"):format(assetId),
+		("rbxthumb://type=Asset&id=%s&w=840&h=240"):format(assetId),
+	}
+
+	for _, source in ipairs(imageSources) do
+		imageLabel.Image = source
+
+		local ok = pcall(function()
+			ContentProvider:PreloadAsync({ imageLabel })
+		end)
+
+		if ok and imageLabel.IsLoaded then
+			sharedEnv.CheatwozBannerImage = source
+			return true
+		end
+	end
+
+	sharedEnv.CheatwozBannerImage = nil
+	return false
+end
+
+applyBannerImage(Banner, bannerAssetId)
 
 local LoadingCard = Instance.new("Frame")
 LoadingCard.AnchorPoint = Vector2.new(0.5, 0)
