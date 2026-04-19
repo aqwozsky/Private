@@ -17,33 +17,41 @@ local bootstrapUrl = "https://raw.githubusercontent.com/aqwozsky/Private/main/ma
 local currentJobId = game.JobId or ""
 
 local function queueBootstrapOnTeleport()
-    if sharedEnv.CheatwozQueuedFromJobId == currentJobId then
+    if sharedEnv.CheatwozQueuedFromJobId == currentJobId and currentJobId ~= "" then
         return
     end
 
-    sharedEnv.CheatwozBootstrapUrl = bootstrapUrl
-    sharedEnv.CheatwozBootstrapCode = ('loadstring(game:HttpGet("%s"))()'):format(sharedEnv.CheatwozBootstrapUrl)
+    sharedEnv.CheatwozQueuedFromJobId = nil
     sharedEnv.CheatwozTeleportQueued = false
     sharedEnv.CheatwozTeleportQueueMethod = nil
 
+    local bootstrapCode = ('loadstring(game:HttpGet("%s"))()'):format(bootstrapUrl)
+    sharedEnv.CheatwozBootstrapUrl = bootstrapUrl
+    sharedEnv.CheatwozBootstrapCode = bootstrapCode
+
     local queueFunctions = {
-        { name = "queue_on_teleport", fn = queue_on_teleport },
-        { name = "queueonteleport", fn = queueonteleport },
-        { name = "syn.queue_on_teleport", fn = syn and syn.queue_on_teleport },
-        { name = "fluxus.queue_on_teleport", fn = fluxus and fluxus.queue_on_teleport },
+        { name = "queue_on_teleport",        fn = type(queue_on_teleport) == "function" and queue_on_teleport },
+        { name = "queueonteleport",          fn = type(queueonteleport) == "function" and queueonteleport },
+        { name = "syn.queue_on_teleport",    fn = syn and type(syn.queue_on_teleport) == "function" and syn.queue_on_teleport },
+        { name = "fluxus.queue_on_teleport", fn = fluxus and type(fluxus.queue_on_teleport) == "function" and fluxus.queue_on_teleport },
     }
 
     for _, entry in ipairs(queueFunctions) do
-        if type(entry.fn) == "function" then
-            local ok = pcall(entry.fn, sharedEnv.CheatwozBootstrapCode)
+        if entry.fn then
+            local ok, err = pcall(entry.fn, bootstrapCode)
             if ok then
                 sharedEnv.CheatwozQueuedFromJobId = currentJobId
                 sharedEnv.CheatwozTeleportQueued = true
                 sharedEnv.CheatwozTeleportQueueMethod = entry.name
-                break
+                print(("Cheatwoz: queued via %s (JobId: %s)"):format(entry.name, currentJobId))
+                return
+            else
+                warn(("Cheatwoz: %s failed -> %s"):format(entry.name, tostring(err)))
             end
         end
     end
+
+    warn("Cheatwoz: no queue_on_teleport function found — auto-load after teleport will not work.")
 end
 
 local function fetchSource(url)
@@ -59,11 +67,7 @@ local function fetchSource(url)
 
     local requestFn = (syn and syn.request) or (http and http.request) or http_request or request
     if type(requestFn) == "function" then
-        local ok, response = pcall(requestFn, {
-            Url = url,
-            Method = "GET",
-        })
-
+        local ok, response = pcall(requestFn, { Url = url, Method = "GET" })
         if ok and type(response) == "table" then
             local body = response.Body or response.body
             if type(body) == "string" and body ~= "" then
